@@ -4,7 +4,7 @@
 
 function usage() {
 cat <<EOF
-$SCRIPT_NAME [-v[v]] [-q|--quiet] query
+$SCRIPT_NAME [-v[v]] [-q|--quiet] [-b|--batch] query
 $SCRIPT_NAME [-h|--help]
 (c) 2014-today Automated Computing Machinery S.L.
     Distributed under the terms of the GNU General Public License v3
@@ -13,6 +13,7 @@ Retrieves the urls for all ebooks matching given query.
 
 Where:
   * query: the query
+  * -b|--batch: change the output format for automation purposes.
 EOF
 }
  
@@ -55,11 +56,17 @@ function checkInput() {
   local _currentCount;
   logDebug -n "Checking input";
 
+  BATCH=1;
+  
   # Flags
   for _flag in ${_flags}; do
     _flagCount=$((_flagCount+1));
     case ${_flag} in
       -h | --help | -v | -vv | -q)
+         shift;
+         ;;
+      -b | --batch)
+         BATCH=0;
          shift;
          ;;
       *) exitWithErrorCode INVALID_OPTION ${_flag};
@@ -101,21 +108,27 @@ function searchEbooks() {
 }
 
 function retrieveEbookInfo() {
-    local _id="${1}";
-    local _jsonResult;
-    createTempFile;
-    _jsonResult="${RESULT}";
+  local _id="${1}";
+  local _title;
+  local _jsonResult;
+  createTempFile;
+  _jsonResult="${RESULT}";
 
-    logInfo -n "Retrieving data for ebook ${_id}";
-    curl -s "${EBOOK_URL}"/"${_id}"  > "${_jsonResult}";
+  logInfo -n "Retrieving data for ebook ${_id}";
+  curl -s "${EBOOK_URL}"/"${_id}"  > "${_jsonResult}";
 
-    if [ $? -eq 0 ]; then
+  if [ $? -eq 0 ]; then
+    _title="$(cat "${_jsonResult}" | jsawk 'return this.Title;')";
+    if [ "${_title}" == "" ]; then
+      logInfoResult WARNING "not found";
+    else
       logInfoResult SUCCESS "$(cat "${_jsonResult}" | jsawk 'return this.Title;')";
       RESULT="$(cat "${_jsonResult}" | jsawk 'return this.Download + "#" + this.Year + "#" + this.ISBN + "#" + this.Publisher + "#" + this.Title + "#" + this.SubTitle;')";
       export RESULT;
-    else
-      logInfoResult FAILURE "error";
-    fi    
+    fi
+  else
+    logInfoResult FAILURE "error";
+  fi    
 }
 
 [ -e "$(basename ${SCRIPT_NAME} .sh).inc.sh" ] && source "$(basename ${SCRIPT_NAME} .sh).inc.sh"
@@ -139,7 +152,14 @@ function main() {
     _publisher="$(echo "${RESULT}" | cut -d'#' -f 4)";
     _title="$(echo "${RESULT}" | cut -d'#' -f 5)";
     _subtitle="$(echo "${RESULT}" | cut -d'#' -f 6)";
-    logInfo -n "${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}";
-    logInfoResult SUCCESS "${_url}";
+    if    [ "${_url}" != "" ] \
+       && [ "${_url}" != "undefined" ]; then
+        
+      logInfo -n "${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}";
+      logInfoResult SUCCESS "${_url}";
+      if [ $BATCH -eq 0 ]; then
+        echo "curl -s -o \"${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}${DEFAULT_FILE_EXTENSION}\" \"${_url}\"";
+      fi
+    fi
   done
 }
