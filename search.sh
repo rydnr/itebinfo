@@ -141,7 +141,8 @@ function main() {
   local _publisher;
   local _title;
   local _subtitle;
-
+  local _filename;
+  
   searchEbooks "${QUERY}";
   _results="${RESULT}";
   for _result in ${_results}; do
@@ -154,11 +155,11 @@ function main() {
     _subtitle="$(echo "${RESULT}" | cut -d'#' -f 6)";
     if    [ "${_url}" != "" ] \
        && [ "${_url}" != "undefined" ]; then
-        
       logInfo -n "${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}";
       logInfoResult SUCCESS "${_url}";
       if [ $BATCH -eq 0 ]; then
-        echo "curl -s -o \"${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}${DEFAULT_FILE_EXTENSION}\" \"${_url}\"";
+        _filename="${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}${DEFAULT_FILE_EXTENSION}";
+        echo "[ ! -e ${_filename} ] && curl --location --referer ${WEB_BASE_URL}${_result}/ -o \"${_publisher}-${_title}.${_subtitle}.${_year}.${_isbn}${DEFAULT_FILE_EXTENSION}\" \"${_url}\"";
       fi
     fi
   done
