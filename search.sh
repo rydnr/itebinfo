@@ -29,7 +29,7 @@ function checkRequirements() {
 function defineErrors() {
     export INVALID_OPTION="Unrecognized option";
     export CURL_NOT_INSTALLED="curl is not installed";
-    export JSAWK_NOT_INSTALLED="jsawk is not installed";
+    export JSAWK_NOT_INSTALLED="jsawk is not installed. Use curl -L http://github.com/micha/jsawk/raw/master/jsawk > /usr/local/bin/jsawk";
     export CAT_NOT_INSTALLED="cat is not installed";
     export TR_NOT_INSTALLED="tr is not installed";
     export QUERY_IS_MANDATORY="The search query is mandatory";
