@@ -109,7 +109,12 @@ function countEbooks() {
         logInfoResult SUCCESS "${_result}";
     else
         logInfoResult FAILURE "${_result}";
-        exitWithErrorCode API_LIMIT_EXCEEDED;
+        if [ $BATCH -eq 0 ]; then
+            echo API_LIMIT_EXCEEDED;
+            exit 1;
+        else
+            exitWithErrorCode API_LIMIT_EXCEEDED;
+        fi
     fi
 
     export RESULT="${_result}";
@@ -122,9 +127,9 @@ function countPages() {
     if [ "x${_total}" == "" ]; then
         _result=0;
     elif [ "x${_itemsPerPage}" == "" ]; then
-        _result=$((${_total} / 10));
+        _result=$((${_total} / 10 + 1));
     else
-       _result=$((${_total} / ${_itemsPerPage}));
+       _result=$((${_total} / ${_itemsPerPage} + 1));
     fi
     
     export RESULT=${_result};
